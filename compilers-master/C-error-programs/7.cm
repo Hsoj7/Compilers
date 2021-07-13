@@ -1,0 +1,32 @@
+void calc(int fac, int x){
+  fac = add(x);
+}
+
+int add(int y){
+  if(y < 0){
+    y = 0;
+  }
+  y = 5 + 5;
+}
+
+void main(void){
+  int fac;
+  int x;
+  fac = 1;
+  x = 2;
+
+  fac = fac * array[0];
+  while(fac < x){
+    fac = add(fac);
+  }
+
+  calc(fac, x);
+}
+
+/*
+errors:
+1: line 2, calling function thats not declared yet
+2: line 10, missing return statement
+3: line 18 trying to use undeclared array
+
+*/

@@ -1,0 +1,26 @@
+int add(int y){
+  if(y < 0){
+    y = 0;
+  }
+  y = 5 + 5;
+  return y;
+}
+
+void main(void i, int){
+  int fac;
+  int x;
+  fac = fac * j;
+  while(fac < x){
+    fac = add(fac);
+  }
+}
+
+/*
+Errors:
+
+1: line 9 incorrect type specifier for function parameter
+2: line 9, missing variable id for function parameter
+3: line 12, trying to use an undeclared variable
+
+
+*/

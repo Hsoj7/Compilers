@@ -1,0 +1,31 @@
+void calc(int fac, int x)
+  fac = add(x);
+  return fac;
+}
+
+void main(int){
+  int fac
+  int x;
+  void temp;
+  temp = 5;
+  x = 3;
+  fac = 2;
+
+  fac = temp * varr;
+  while(fac < x {
+    fac = add(fac);
+  }
+  calc(fac, x);
+}
+
+/*
+errors:
+1: line 1 missing right curly on calc function declaration
+2: line 7 missing semi
+3: line 3 return from void function
+4: line 6 main argument missing id
+5: line 9 temp declared as void
+6: line 14 varr is undeclared
+7: line 15 missing right bracket for while
+8: line 16 add is undeclared
+*/

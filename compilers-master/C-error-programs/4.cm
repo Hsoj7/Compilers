@@ -1,0 +1,17 @@
+void main(void){
+  int x;
+  x = input();
+
+  if(x < 100){
+    x = 100;
+  }
+
+  output(x);
+}
+
+/*
+No errors
+  -x is assigned a value from user input
+  -x is then calculated based on an if statement
+  -The value of x is output
+*/

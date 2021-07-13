@@ -1,0 +1,22 @@
+array[0];
+
+void main(void)
+  int fac;
+  int x;
+  fac = 1;
+  x = 2;
+
+  if fac < x){
+    fac = fac + 1;
+  }
+
+}
+
+/*
+
+errors:
+1. line 1 global array declaration missing type specifier
+2. line 3 function missing right curly
+3. line 9 missing if statement left bracket
+
+*/

@@ -1,0 +1,14 @@
+void main(int j) {
+  int x;
+  x = 5;
+  j = x + 1;
+  output(j);
+}
+
+/*
+No errors
+  -Main has 1 argument
+  -includes assignment for x value
+  -includes assignment and operation for j value
+  -includes function call to output
+*/

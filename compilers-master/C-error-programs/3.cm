@@ -1,0 +1,21 @@
+int assignX(){
+  return 10;
+}
+
+void main(void) {
+  int x;
+  x = assignX();
+
+  while(x < 15){
+    x = x + 1;
+  }
+
+  output(x);
+}
+
+/*
+No errors
+  -x is assigned a value from a user defined function
+  -function returns an integer
+  -while loop iterates until x = 15
+*/

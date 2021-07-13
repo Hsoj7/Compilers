@@ -1,0 +1,42 @@
+void calc(int fac, int x){
+  fac = add(x);
+  return fac;
+}
+
+int add(int y){
+  if(y < 0){
+    y = 0;
+  }
+  y = 5 + 5;
+  return y;
+}
+
+void main(int){
+  int fac;
+  int x;
+  void temp;
+  temp = 5;
+
+  fac = temp * varr;
+  varr = fac;
+  while(fac < x){
+    fac = add(fac);
+  }
+  calc(fac, x);
+}
+/*
+Errors:
+
+1: Line 2, trying to call undeclared function
+
+2: line 3, returning value from void function
+
+3: line 14, expected id for integer declaration
+
+4: line 17, temp variable in function body declared as void
+
+5: Line 21, trying to use undefined variable varr in calculation
+
+6: Line 22, trying to use undefined variable varr in lhs of assignment
+
+*/

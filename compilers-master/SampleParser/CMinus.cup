@@ -1,0 +1,351 @@
+/*
+  Created by: Fei Song
+  File Name: tiny.cup
+  To Build: java java_cup.Main < tiny.cup
+*/
+
+
+/* ----------------------Preliminary Declarations Section--------------------*/
+
+/* Import the class java_cup.runtime.*  */
+import java_cup.runtime.*;
+import absyn.*;
+import java_cup.runtime.Symbol;
+
+/* Parser code to change the way the parser reports errors (include
+   line and column number of the error). */
+parser code {:
+
+    public void test() {
+      System.out.println("HELLO FROM CUP");
+    }
+
+    /* Change the method report_error so it will display the line and
+       column of where the error occurred in the input as well as the
+       reason for the error which is passed into the method in the
+       String 'message'. */
+    public void report_error(String message, Object info) {
+
+        /* Create a StringBuffer called 'm' with the string 'Error' in it. */
+        StringBuffer m = new StringBuffer("Error");
+
+        /* Check if the information passed to the method is the same
+           type as the type java_cup.runtime.Symbol. */
+        if (info instanceof java_cup.runtime.Symbol) {
+            /* Declare a java_cup.runtime.Symbol object 's' with the
+               information in the object info that is being typecasted
+               as a java_cup.runtime.Symbol object. */
+            java_cup.runtime.Symbol s = ((java_cup.runtime.Symbol) info);
+
+            /* Check if the line number in the input is greater or
+               equal to zero. */
+            if (s.left >= 0) {
+                /* Add to the end of the StringBuffer error message
+                   the line number of the error in the input. */
+                m.append(" in line "+(s.left+1));
+                /* Check if the column number in the input is greater
+                   or equal to zero. */
+                if (s.right >= 0)
+                    /* Add to the end of the StringBuffer error message
+                       the column number of the error in the input. */
+                    m.append(", column "+(s.right+1));
+            }
+        }
+
+        /* Add to the end of the StringBuffer error message created in
+           this method the message that was passed into this method. */
+        m.append(" : "+message);
+
+        /* Print the contents of the StringBuffer 'm', which contains
+           an error message, out on a line. */
+        System.err.println(m);
+    }
+
+    /* Change the method report_fatal_error so when it reports a fatal
+       error it will display the line and column number of where the
+       fatal error occurred in the input as well as the reason for the
+       fatal error which is passed into the method in the object
+       'message' and then exit.*/
+    public void report_fatal_error(String message, Object info) {
+        report_error(message, info);
+        System.exit(1);
+    }
+
+:};
+
+
+/* ------------Declaration of Terminals and Non Terminals Section----------- */
+
+terminal ELSE, IF, INT, RETURN, VOID, WHILE;
+terminal PLUS, MINUS, TIMES, OVER, LT, LESSEQ, GT, GREATEQ, EQUIV, NOTEQ, EQ, SEMI, COMMA, LPAREN, RPAREN, LSQPAREN, RSQPAREN, LCURLY, RCURLY;
+terminal String ID, NUM;
+terminal ERROR;
+
+non terminal DecList program, declar_list;
+non terminal Dec declar, fun_declar;
+non terminal Var var;
+non terminal VarDec var_declar, param;
+non terminal VarDecList local_declar, param_list;
+non terminal Exp exp, stmt;
+non terminal ExpList arg_list, stmt_list;
+non terminal CompoundExp compound_stmt;
+non terminal NameTy type_spec, currentType;
+
+precedence right EQ; //=
+precedence nonassoc LT, LESSEQ, GT, GREATEQ, EQUIV, NOTEQ;
+precedence left PLUS, MINUS;
+precedence left TIMES, OVER;
+
+/* ----------------------------Grammar Section-------------------- */
+/* WE NEED EPSILON'S. local declaration and statement list have this*/
+start with program;
+
+program	      ::= declar_list:dl
+                  {: RESULT = dl; :}
+               ;
+
+declar_list    ::= declar_list:dl declar:d
+                   {: DecList t = dl;
+                    while( t.tail != null )
+                      t = t.tail;
+                    t.tail = new DecList(d, null);
+                    RESULT = dl;
+                 :}
+               | declar:d
+                 {: RESULT = new DecList(d, null); :}
+               ;
+
+declar         ::= var_declar:vd
+                   {: RESULT = vd; :}
+               | fun_declar:fd
+                 {: RESULT = fd; :}
+               ;
+
+var_declar     ::= type_spec:ts ID:i SEMI
+                   {: RESULT = new SimpleDec(tsleft, tsright, ts, i); :}
+               | type_spec:ts ID:i LSQPAREN NUM:n RSQPAREN SEMI
+                 {: RESULT = new ArrayDec(tsleft, tsright, ts, i, new IntExp(nleft, nright, Integer.parseInt(n))); :}
+
+               /*errors*/
+               | type_spec:ts ID:i error:e
+                 {: parser.report_error("invalid - missing semicolon for variable declaration", null);
+                    RESULT = new SimpleDec(eleft, eright, new NameTy(eleft, eright, NameTy.INT), i);
+                 :}
+
+               | type_spec:ts ID:i LSQPAREN NUM:n RSQPAREN error:e
+                 {: parser.report_error("invalid - missing semicolon for array declaration", null);
+                    RESULT = new ArrayDec(tsleft, tsright, ts, i, new IntExp(nleft, nright, Integer.parseInt(n)));
+                 :}
+                ;
+
+
+var            ::= ID:i
+                   {: RESULT = new SimpleVar(ileft, iright, i); :}
+               | ID:i LSQPAREN exp:e RSQPAREN
+                {: RESULT = new IndexVar(ileft,iright, i, e); :}
+              ;
+
+type_spec      ::= INT: i
+                   {: RESULT = new NameTy(ileft, iright, NameTy.INT); :}
+               | VOID:v
+                 {: RESULT = new NameTy(vleft, vright, NameTy.VOID); :}
+               ;
+
+fun_declar     ::= type_spec:ts ID:i LPAREN param_list:pl RPAREN compound_stmt:cs
+                   {: RESULT = new FunctionDec(tsleft, tsright, ts, i, pl, cs); :}
+               | error:e ID:i LPAREN param_list:pl RPAREN compound_stmt:cs
+                {:
+                  parser.report_error("Invalid - missing or invalid type specifier for function declaration, corrected to void", null);
+                  RESULT = new FunctionDec(eleft, eright, null, i, pl, cs);
+                :}
+               ;
+
+param_list    ::= param_list:pl COMMA param:p
+                   {: VarDecList t = pl;
+                    while( t.tail != null )
+                      t = t.tail;
+                    t.tail = new VarDecList(p, null);
+                    RESULT = pl;
+                 :}
+               | param:p
+                 {: RESULT = new VarDecList(p, null); :}
+               ;
+
+param          ::= type_spec:ts ID:i
+                    {: RESULT = new SimpleDec(tsleft, tsright, ts, i); :}
+               | type_spec:ts ID:i LSQPAREN RSQPAREN
+                 {: RESULT = new SimpleDec(tsleft, tsright, ts, i); :}
+               | type_spec:ts
+                 {: RESULT = new SimpleDec(tsleft, tsright, ts, null); :}
+               | {: RESULT = null; :}
+
+               /*errors*/
+               | type_spec:ts ID:i error:e RSQPAREN
+                {:
+                  parser.report_error("invalid - missing left square parantheis in param", null);
+                  RESULT = new SimpleDec(tsleft, tsright, ts, i);
+                :}
+              | type_spec:ts ID:i LSQPAREN error:e
+                {:
+                  parser.report_error("invalid - missing right square parantheis in param", null);
+                  RESULT = new SimpleDec(tsleft, tsright, ts, i);
+                :}
+               ;
+
+compound_stmt  ::= LCURLY:lc local_declar:ld stmt_list:sl RCURLY
+                   {:RESULT = new CompoundExp(lcleft, lcright, ld, sl); :}
+               | LCURLY:lc local_declar:ld RCURLY
+                 {:RESULT = new CompoundExp(lcleft, lcright, ld, null); :}
+               | LCURLY:lc stmt_list:sl RCURLY
+                 {:RESULT = new CompoundExp(lcleft, lcright, null, sl); :}
+               | LCURLY:lc RCURLY
+                 {:RESULT = new CompoundExp(lcleft, lcright, null, null); :}
+
+              /*errors*/
+
+               | error:e RCURLY
+                {: parser.report_error("invalid - missing left curly bracket", null);
+                   RESULT = new CompoundExp(eleft, eright, null, null);
+                :}
+
+               | error:e stmt_list:sl RCURLY
+                 {: parser.report_error("invalid - missing left curly bracket", null);
+                    RESULT = new CompoundExp(eleft, eright, null, sl);
+                 :}
+               | error:e local_declar:ld stmt_list:sl RCURLY
+                 {: parser.report_error("invalid - missing left curly bracket", null);
+                    RESULT = new CompoundExp(eleft, eright, ld, sl);
+                 :}
+               |  error:e local_declar:ld RCURLY
+                 {: parser.report_error("invalid - missing left curly bracket", null);
+                    RESULT = new CompoundExp(eleft, eright, ld, null);
+                 :}
+               ;
+
+local_declar   ::= local_declar:ld var_declar:vd
+                   {: VarDecList t = ld;
+                    while( t.tail != null )
+                      t = t.tail;
+                    t.tail = new VarDecList(vd, null);
+                    RESULT = ld;
+                 :}
+               | var_declar:vd
+                 {: RESULT = new VarDecList(vd, null); :}
+               ;
+
+stmt_list      ::= stmt_list:sl stmt:s
+                   {: ExpList t = sl;
+                    while( t.tail != null )
+                      t = t.tail;
+                    t.tail = new ExpList(s, null);
+                    RESULT = sl;
+                 :}
+               | stmt:s
+				         {: RESULT = new ExpList(s, null); :}
+			         ;
+
+arg_list       ::= arg_list:al COMMA exp:e
+                   {: ExpList t = al;
+                    while( t.tail != null )
+                      t = t.tail;
+                    t.tail = new ExpList(e, null);
+                    RESULT = al;
+                 :}
+               | exp:e
+                  {: RESULT = new ExpList(e, null); :}
+               ;
+
+stmt           ::= exp:e SEMI
+                  {: RESULT = e; :}
+               | SEMI:s
+                 {: RESULT = new NilExp(sleft, sright); :}
+               | compound_stmt:cs
+                 {: RESULT = cs; :}
+               | IF LPAREN exp:e RPAREN stmt:s1 ELSE stmt:s2
+                 {:RESULT = new IfExp(eleft, eright, e, s1, s2);:}
+               | IF LPAREN exp:e RPAREN stmt:s
+                 {:RESULT = new IfExp(eleft, eright, e, s, null);:}
+               | WHILE LPAREN exp:e RPAREN compound_stmt:s
+                 {:RESULT = new WhileExp(eleft, eright, e, s);:}
+               | RETURN exp:e SEMI
+                 {:RESULT = new ReturnExp(eleft, eright, e);:}
+               | RETURN:r SEMI
+                 {:RESULT = new ReturnExp(rleft, rright, null);:}
+
+               /*errors*/
+
+               | exp:e error:r
+                 {:parser.report_error("invalid - missing semicolon for expression", null);
+                  RESULT = e;
+                 :}
+
+               | RETURN exp:e error:r
+                  {:parser.report_error("invalid - no semicolon for return statement", null);
+                    RESULT = new ReturnExp(eleft, eright, e);
+                  :}
+
+               | RETURN:r error:e
+                  {:parser.report_error("invalid - no semicolon for return statement", null);
+                    RESULT = new ReturnExp(rleft, rright, null);
+                  :}
+               | WHILE error:r exp:e RPAREN compound_stmt:s
+                 {:parser.report_error("invalid - missing left parantheis in while loop", null);
+                  RESULT = new WhileExp(eleft, eright, e, s);
+                 :}
+               | WHILE LPAREN exp:e error:r compound_stmt:s
+                 {:parser.report_error("invalid - missing right parantheis in while loop", null);
+                  RESULT = new WhileExp(eleft, eright, e, s);
+                 :}
+
+              | IF error:r exp:e RPAREN stmt:s1 ELSE stmt:s2
+                 {:parser.report_error("invalid - missing left parantheis in if statement with else statement", null);
+                  RESULT = new IfExp(eleft, eright, e, s1, s2);
+                 :}
+              | IF LPAREN exp:e error:r stmt:s1 ELSE stmt:s2
+                 {:parser.report_error("invalid - missing right parantheis in if statement with else statement", null);
+                  RESULT = new IfExp(eleft, eright, e, s1, s2);
+                 :}
+              | IF error:r exp:e RPAREN stmt:s
+                 {:parser.report_error("invalid - missing left parantheis in if statement", null);
+                   RESULT = new IfExp(eleft, eright, e, s, null);
+                 :}
+              | IF LPAREN exp:e error:r stmt:s
+                 {:parser.report_error("invalid - missing right parantheis in if statement", null);
+                  RESULT = new IfExp(eleft, eright, e, s, null);
+                 :}
+               ;
+
+
+exp            ::= var:v EQ exp:e
+                   {:RESULT = new AssignExp(vleft, vright, v, e); :}
+               | ID:i LPAREN RPAREN
+                 {: RESULT = new CallExp(ileft, iright, i, null); :}
+               | LPAREN exp:e RPAREN
+                 {: RESULT = e; :}
+               | ID:i LPAREN arg_list:al RPAREN
+    	            {: RESULT = new CallExp(ileft, iright, i, al); :}
+               | NUM:n
+  	             {: RESULT = new IntExp(nleft, nright, Integer.parseInt(n)); :}
+               | var:v
+ 	               {: RESULT = new VarExp(vleft, vright, v); :}
+               | exp:e1 LT exp:e2
+                 {:RESULT = new OpExp(e1left, e1right, e1, OpExp.LT, e2); :}
+               | exp:e1 LESSEQ exp:e2
+                 {:RESULT = new OpExp(e1left, e1right, e1, OpExp.LESSEQ, e2); :}
+               | exp:e1 GT exp:e2
+                 {:RESULT = new OpExp(e1left, e1right, e1, OpExp.GT, e2); :}
+               | exp:e1 GREATEQ exp:e2
+                 {:RESULT = new OpExp(e1left, e1right, e1, OpExp.GREATEQ, e2); :}
+               | exp:e1 EQUIV exp:e2
+                 {:RESULT = new OpExp(e1left, e1right, e1, OpExp.EQUIV, e2); :}
+               | exp:e1 NOTEQ exp:e2
+                 {:RESULT = new OpExp(e1left, e1right, e1, OpExp.NOTEQ, e2); :}
+               | exp:e1 PLUS exp:e2
+                 {:RESULT = new OpExp(e1left, e1right, e1, OpExp.PLUS, e2); :}
+               | exp:e1 MINUS exp:e2
+                 {:RESULT = new OpExp(e1left, e1right, e1, OpExp.MINUS, e2); :}
+               | exp:e1 TIMES exp:e2
+                 {:RESULT = new OpExp(e1left, e1right, e1, OpExp.TIMES, e2); :}
+               | exp:e1 OVER exp:e2
+                 {:RESULT = new OpExp(e1left, e1right, e1, OpExp.OVER, e2); :}
+               ;

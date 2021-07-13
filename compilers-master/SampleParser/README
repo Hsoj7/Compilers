@@ -1,0 +1,49 @@
+A JFlex+Cup implementation for the C Minus language.
+
+  Note that you need to modify the paths for CLASSPATH, JFLEX, and CUP in
+the Makefile so that the related commands can be found on your particular
+machine.  For example, the given settings are for the Linux server and the
+commented settings are for my macbook.
+
+  To build the parser, type "make" in the current directory, which will
+generate an executable program called "Main".
+
+  To test source code like "fac.tiny", type
+
+    "java -classpath /usr/share/java/cup.jar:. Main fac.tiny"
+
+  To test the source code and display the syntax tree, include -a as the last
+  argument. Ex:
+
+    "java -cp /usr/share/java/cup.jar:. Main ../C-error-programs/1.cm -a"
+
+  To test the source code and display the symbol table, include -s as the last
+  argument. Ex:
+
+    "java -cp /usr/share/java/cup.jar:. Main ../C-error-programs/1.cm -s"
+
+  To test the source code and output assembly code, include -c as the last
+  argument. Ex:
+
+    "java -cp /usr/share/java/cup.jar:. Main ../C-error-programs/1.cm -c"
+
+  To rebuild the parser, type "make clean" and type "make" again.
+
+  Also note that all the abstract syntax tree structures are defined under
+the directory "absyn" and the methods for showing a syntax tree is implemented
+by the visitor pattern in "ShowTreeVisitor.java".  Since some java files are
+generated automatically, they may contain variables that are not used, which
+are safe to ignore in the compilation process. The methods for maintaining the
+symbol table are implemented by the visitor pattern in "SemanticAnalyzer.java"
+and also use the tree structures defined under the "absyn" directory.
+
+  This program was developed using the starter code provided by the instructor
+for the tiny language. It has been programmed to understand grammar of the
+C Minus language, output an abstract syntax tree with the -a flag and output
+the symbol table with the -s flag. This checkpoint includes SemanticAnalyzer.java
+for semantic analysis of a given C- program. Running the program with -s will
+display the symbol table and any errors associated with the program.
+
+Team members include Joshua Stone and Laiba Mustafa.
+
+Happy marking :)
